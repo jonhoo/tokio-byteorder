@@ -726,7 +726,7 @@ macro_rules! writer {
                 while this.written < $bytes as u8 {
                     this.written += match dst
                         .as_mut()
-                        .poll_write(cx, &mut this.buf[this.written as usize..])
+                        .poll_write(cx, &this.buf[this.written as usize..])
                     {
                         Poll::Pending => return Poll::Pending,
                         Poll::Ready(Err(e)) => return Poll::Ready(Err(e.into())),
@@ -751,8 +751,8 @@ macro_rules! writer8 {
             fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
                 let this = unsafe { self.get_unchecked_mut() };
                 let dst = unsafe { Pin::new_unchecked(&mut this.0) };
-                let mut buf = [this.1 as u8];
-                match dst.poll_write(cx, &mut buf[..]) {
+                let buf = [this.1 as u8];
+                match dst.poll_write(cx, &buf[..]) {
                     Poll::Pending => Poll::Pending,
                     Poll::Ready(Err(e)) => Poll::Ready(Err(e.into())),
                     Poll::Ready(Ok(0)) => Poll::Pending,
