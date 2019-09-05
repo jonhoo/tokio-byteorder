@@ -1,17 +1,21 @@
 [package]
 name = "tokio-byteorder"
 version = "0.1.0"
+edition = "2018"
 authors = ["Jon Gjengset <jon@thesquareplanet.com>"]
+
 description = "Asynchronous library for reading/writing numbers in big-endian and little-endian."
 repository = "https://github.com/jonhoo/tokio-byteorder"
-edition = "2018"
 
-categories = ["encoding", "parsing", "asynchronous"]
 keywords = ["byte", "endian", "big-endian", "little-endian", "binary", "tokio"]
+categories = ["encoding", "parsing", "asynchronous"]
 
 license = "Unlicense OR MIT"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[badges]
+azure-devops = { project = "jonhoo/jonhoo", pipeline = "tokio-byteorder", build = "12" }
+codecov = { repository = "jonhoo/tokio-byteorder", branch = "master", service = "github" }
+
 
 [dependencies]
 tokio = { version = "0.2.0-alpha.4", default-features = false, features = ["io"] }
