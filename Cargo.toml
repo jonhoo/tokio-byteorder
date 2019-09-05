@@ -8,7 +8,7 @@ readme = "README.md"
 description = "Asynchronous library for reading/writing numbers in big-endian and little-endian."
 repository = "https://github.com/jonhoo/tokio-byteorder"
 
-keywords = ["byte", "endian", "big-endian", "little-endian", "binary", "tokio"]
+keywords = ["byte", "endian", "big-endian", "little-endian", "tokio"]
 categories = ["encoding", "parsing", "asynchronous"]
 
 license = "Unlicense OR MIT"
