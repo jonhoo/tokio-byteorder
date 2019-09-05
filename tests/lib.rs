@@ -3,7 +3,7 @@ macro_rules! rtt {
         #[tokio::test]
         async fn $name() -> tokio::io::Result<()> {
             #[allow(unused_imports)]
-            use tokio_byteorder::{BigEndian, AsyncReadBytesExt, AsyncWriteBytesExt};
+            use tokio_byteorder::{AsyncReadBytesExt, AsyncWriteBytesExt, BigEndian};
 
             let mut bytes = Vec::new();
             let () = $write(&mut bytes, $v).await?;
@@ -12,7 +12,7 @@ macro_rules! rtt {
             assert_eq!(v, $v);
             Ok(())
         }
-    }
+    };
 }
 
 macro_rules! writes {
@@ -20,14 +20,14 @@ macro_rules! writes {
         #[tokio::test]
         async fn writes() -> tokio::io::Result<()> {
             #[allow(unused_imports)]
-            use tokio_byteorder::{BigEndian, AsyncWriteBytesExt};
+            use tokio_byteorder::{AsyncWriteBytesExt, BigEndian};
 
             let mut bytes = Vec::new();
             let () = $write(&mut bytes, $v).await?;
             assert_ne!(bytes.len(), 0);
             Ok(())
         }
-    }
+    };
 }
 
 macro_rules! rtts {
