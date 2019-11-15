@@ -23,7 +23,7 @@ mod futurestest {
             async fn writes() -> tokio::io::Result<()> {
                 #[allow(unused_imports)]
                 use tokio_byteorder::futures::{AsyncWriteBytesExt, BigEndian};
-            
+
                 let mut bytes = Vec::new();
                 let () = $write(&mut bytes, $v).await?;
                 assert_ne!(bytes.len(), 0);

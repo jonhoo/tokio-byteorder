@@ -279,8 +279,12 @@ pub mod futures {
 }
 /// Prelude for convinience
 pub mod prelude {
-    #[cfg(features = "tokio-traits")]
-    pub use tokio::io_tokio::{AsyncReadBytesExt, AsyncWriteBytesExt, BigEndian, LittleEndian, NativeEndian, NetworkEndian};
     #[cfg(features = "futures-traits")]
-    pub use tokio::io_futures::{AsyncReadBytesExt, AsyncWriteBytesExt, BigEndian, LittleEndian, NativeEndian, NetworkEndian};
+    pub use tokio::io_futures::{
+        AsyncReadBytesExt, AsyncWriteBytesExt, BigEndian, LittleEndian, NativeEndian, NetworkEndian,
+    };
+    #[cfg(features = "tokio-traits")]
+    pub use tokio::io_tokio::{
+        AsyncReadBytesExt, AsyncWriteBytesExt, BigEndian, LittleEndian, NativeEndian, NetworkEndian,
+    };
 }

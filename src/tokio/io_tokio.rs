@@ -80,8 +80,8 @@ pub trait AsyncReadBytesExt: io::AsyncRead {
     /// ```
     #[inline]
     fn read_u8<'a>(&'a mut self) -> ReadU8<&'a mut Self>
-        where
-            Self: Unpin,
+    where
+        Self: Unpin,
     {
         ReadU8(self)
     }
@@ -114,8 +114,8 @@ pub trait AsyncReadBytesExt: io::AsyncRead {
     /// ```
     #[inline]
     fn read_i8<'a>(&'a mut self) -> ReadI8<&'a mut Self>
-        where
-            Self: Unpin,
+    where
+        Self: Unpin,
     {
         ReadI8(self)
     }
@@ -578,8 +578,8 @@ pub trait AsyncWriteBytesExt: io::AsyncWrite {
     /// ```
     #[inline]
     fn write_u8<'a>(&'a mut self, n: u8) -> WriteU8<&'a mut Self>
-        where
-            Self: Unpin,
+    where
+        Self: Unpin,
     {
         WriteU8(self, n)
     }
@@ -612,8 +612,8 @@ pub trait AsyncWriteBytesExt: io::AsyncWrite {
     /// ```
     #[inline]
     fn write_i8<'a>(&'a mut self, n: i8) -> WriteI8<&'a mut Self>
-        where
-            Self: Unpin,
+    where
+        Self: Unpin,
     {
         WriteI8(self, n)
     }
