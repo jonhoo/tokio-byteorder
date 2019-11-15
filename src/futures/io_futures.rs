@@ -1,64 +1,3 @@
-/*!
-This crate provides convenience methods for encoding and decoding numbers in
-either [big-endian or little-endian order] on top of asynchronous I/O streams.
-It owes everything to the magnificent [`byteorder`] crate. This crate only
-provides a shim to [`AsyncRead`] and [`AsyncWrite`].
-The organization of the crate mirrors that of `byteorder`. A trait, [`ByteOrder`], specifies
-byte conversion methods for each type of number in Rust (sans numbers that have
-a platform dependent size like `usize` and `isize`). Two types, [`BigEndian`]
-and [`LittleEndian`] implement these methods. Finally, [`AsyncReadBytesExt`] and
-[`AsyncWriteBytesExt`] provide convenience methods available to all types that
-implement [`Read`] and [`Write`].
-An alias, [`NetworkEndian`], for [`BigEndian`] is provided to help improve
-code clarity.
-An additional alias, [`NativeEndian`], is provided for the endianness of the
-local platform. This is convenient when serializing data for use and
-conversions are not desired.
-# Examples
-Read unsigned 16 bit big-endian integers from an [`AsyncRead`] type:
-```rust
-use async_std::io::Cursor;
-use tokio_byteorder::futures::{BigEndian, AsyncReadBytesExt};
-#[tokio::main]
-async fn main() {
-    let mut rdr = Cursor::new(vec![2, 5, 3, 0]);
-    // Note that we use type parameters to indicate which kind of byte order
-    // we want!
-    assert_eq!(517, rdr.read_u16::<BigEndian>().await.unwrap());
-    assert_eq!(768, rdr.read_u16::<BigEndian>().await.unwrap());
-}
-```
-Write unsigned 16 bit little-endian integers to a [`AsyncWrite`] type:
-```rust
-use tokio_byteorder::futures::{LittleEndian, AsyncWriteBytesExt};
-#[tokio::main]
-async fn main() {
-    let mut wtr = vec![];
-    wtr.write_u16::<LittleEndian>(517).await.unwrap();
-    wtr.write_u16::<LittleEndian>(768).await.unwrap();
-    assert_eq!(wtr, vec![5, 2, 0, 3]);
-}
-```
-# Alternatives
-Note that as of Rust 1.32, the standard numeric types provide built-in methods
-like `to_le_bytes` and `from_le_bytes`, which support some of the same use
-cases.
-[big-endian or little-endian order]: https://en.wikipedia.org/wiki/Endianness
-[`byteorder`]: https://github.com/BurntSushi/byteorder/
-[`ByteOrder`]: trait.ByteOrder.html
-[`BigEndian`]: enum.BigEndian.html
-[`LittleEndian`]: enum.LittleEndian.html
-[`AsyncReadBytesExt`]: trait.AsyncReadBytesExt.html
-[`AsyncWriteBytesExt`]: trait.AsyncWriteBytesExt.html
-[`NetworkEndian`]: type.NetworkEndian.html
-[`NativeEndian`]: type.NativeEndian.html
-[`AsyncRead`]: https://docs.rs/tokio/0.2.0-alpha.4/tokio/io/trait.AsyncRead.html
-[`AsyncWrite`]: https://docs.rs/tokio/0.2.0-alpha.4/tokio/io/trait.AsyncWrite.html
-*/
-
-#![deny(missing_docs)]
-#![warn(rust_2018_idioms)]
-
 use byteorder::ByteOrder;
 use core::future::Future;
 use core::marker::{PhantomData, Unpin};
@@ -68,96 +7,6 @@ use core::task::{Context, Poll};
 use futures_io as io;
 
 pub use byteorder::{BigEndian, LittleEndian, NativeEndian, NetworkEndian};
-
-macro_rules! reader {
-    ($name:ident, $ty:ty, $reader:ident) => {
-        reader!($name, $ty, $reader, size_of::<$ty>());
-    };
-    ($name:ident, $ty:ty, $reader:ident, $bytes:expr) => {
-        #[doc(hidden)]
-        pub struct $name<R, T> {
-            buf: [u8; $bytes],
-            read: u8,
-            src: R,
-            bo: PhantomData<T>,
-        }
-
-        impl<R, T> $name<R, T> {
-            fn new(r: R) -> Self {
-                $name {
-                    buf: [0; $bytes],
-                    read: 0,
-                    src: r,
-                    bo: PhantomData,
-                }
-            }
-        }
-
-        impl<R, T> Future for $name<R, T>
-        where
-            R: io::AsyncRead,
-            T: ByteOrder,
-        {
-            type Output = io::Result<$ty>;
-            fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                if self.read == $bytes as u8 {
-                    return Poll::Ready(Ok(T::$reader(&self.buf[..])));
-                }
-
-                // we need this so that we can mutably borrow multiple fields
-                // it is safe as long as we never take &mut to src (since it has been pinned)
-                // unless it is to place it in a Pin itself like below.
-                let mut this = unsafe { self.get_unchecked_mut() };
-                let mut src = unsafe { Pin::new_unchecked(&mut this.src) };
-
-                while this.read < $bytes as u8 {
-                    this.read += match src
-                        .as_mut()
-                        .poll_read(cx, &mut this.buf[this.read as usize..])
-                    {
-                        Poll::Pending => return Poll::Pending,
-                        Poll::Ready(Err(e)) => return Poll::Ready(Err(e.into())),
-                        Poll::Ready(Ok(0)) => {
-                            return Poll::Ready(Err(io::Error::new(
-                                io::ErrorKind::UnexpectedEof,
-                                "failed to fill whole buffer",
-                            )));
-                        }
-                        Poll::Ready(Ok(n)) => n as u8,
-                    };
-                }
-                Poll::Ready(Ok(T::$reader(&this.buf[..])))
-            }
-        }
-    };
-}
-
-macro_rules! reader8 {
-    ($name:ident, $ty:ty) => {
-        #[doc(hidden)]
-        pub struct $name<R>(R);
-        impl<R> Future for $name<R>
-        where
-            R: io::AsyncRead,
-        {
-            type Output = io::Result<$ty>;
-            fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                let src = unsafe { self.map_unchecked_mut(|t| &mut t.0) };
-                let mut buf = [0; 1];
-                match src.poll_read(cx, &mut buf[..]) {
-                    Poll::Pending => Poll::Pending,
-                    Poll::Ready(Err(e)) => Poll::Ready(Err(e.into())),
-                    Poll::Ready(Ok(0)) => Poll::Ready(Err(io::Error::new(
-                        io::ErrorKind::UnexpectedEof,
-                        "failed to fill whole buffer",
-                    ))),
-                    Poll::Ready(Ok(1)) => Poll::Ready(Ok(buf[0] as $ty)),
-                    Poll::Ready(Ok(_)) => unreachable!(),
-                }
-            }
-        }
-    };
-}
 
 reader8!(ReadU8, u8);
 reader8!(ReadI8, i8);
@@ -176,19 +25,6 @@ reader!(ReadI32, i32, read_i32);
 reader!(ReadI48, i64, read_i48, 6);
 reader!(ReadI64, i64, read_i64);
 reader!(ReadI128, i128, read_i128);
-
-macro_rules! read_impl {
-    (
-        $(#[$outer:meta])*
-        fn $name:ident(&mut self) -> $($fut:tt)*
-    ) => {
-        $(#[$outer])*
-        #[inline]
-        fn $name<'a, T: ByteOrder>(&'a mut self) -> $($fut)*<&'a mut Self, T> where Self: Unpin {
-            $($fut)*::new(self)
-        }
-    }
-}
 
 /// Extends [`AsyncRead`] with methods for reading numbers.
 ///
@@ -670,87 +506,6 @@ pub trait AsyncReadBytesExt: io::AsyncRead {
 /// for free.
 impl<R: io::AsyncRead + ?Sized> AsyncReadBytesExt for R {}
 
-macro_rules! writer {
-    ($name:ident, $ty:ty, $writer:ident) => {
-        writer!($name, $ty, $writer, size_of::<$ty>());
-    };
-    ($name:ident, $ty:ty, $writer:ident, $bytes:expr) => {
-        #[doc(hidden)]
-        pub struct $name<W> {
-            buf: [u8; $bytes],
-            written: u8,
-            dst: W,
-        }
-
-        impl<W> $name<W> {
-            fn new<T: ByteOrder>(w: W, value: $ty) -> Self {
-                let mut writer = $name {
-                    buf: [0; $bytes],
-                    written: 0,
-                    dst: w,
-                };
-                T::$writer(&mut writer.buf[..], value);
-                writer
-            }
-        }
-
-        impl<W> Future for $name<W>
-        where
-            W: io::AsyncWrite,
-        {
-            type Output = io::Result<()>;
-            fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                if self.written == $bytes as u8 {
-                    return Poll::Ready(Ok(()));
-                }
-
-                // we need this so that we can mutably borrow multiple fields
-                // it is safe as long as we never take &mut to dst (since it has been pinned)
-                // unless it is to place it in a Pin itself like below.
-                let mut this = unsafe { self.get_unchecked_mut() };
-                let mut dst = unsafe { Pin::new_unchecked(&mut this.dst) };
-
-                while this.written < $bytes as u8 {
-                    this.written += match dst
-                        .as_mut()
-                        .poll_write(cx, &this.buf[this.written as usize..])
-                    {
-                        Poll::Pending => return Poll::Pending,
-                        Poll::Ready(Err(e)) => return Poll::Ready(Err(e.into())),
-                        Poll::Ready(Ok(n)) => n as u8,
-                    };
-                }
-                Poll::Ready(Ok(()))
-            }
-        }
-    };
-}
-
-macro_rules! writer8 {
-    ($name:ident, $ty:ty) => {
-        #[doc(hidden)]
-        pub struct $name<W>(W, $ty);
-        impl<W> Future for $name<W>
-        where
-            W: io::AsyncWrite,
-        {
-            type Output = io::Result<()>;
-            fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-                let this = unsafe { self.get_unchecked_mut() };
-                let dst = unsafe { Pin::new_unchecked(&mut this.0) };
-                let buf = [this.1 as u8];
-                match dst.poll_write(cx, &buf[..]) {
-                    Poll::Pending => Poll::Pending,
-                    Poll::Ready(Err(e)) => Poll::Ready(Err(e.into())),
-                    Poll::Ready(Ok(0)) => Poll::Pending,
-                    Poll::Ready(Ok(1)) => Poll::Ready(Ok(())),
-                    Poll::Ready(Ok(_)) => unreachable!(),
-                }
-            }
-        }
-    };
-}
-
 writer8!(WriteU8, u8);
 writer8!(WriteI8, i8);
 
@@ -768,19 +523,6 @@ writer!(WriteI32, i32, write_i32);
 writer!(WriteI48, i64, write_i48, 6);
 writer!(WriteI64, i64, write_i64);
 writer!(WriteI128, i128, write_i128);
-
-macro_rules! write_impl {
-    (
-        $(#[$outer:meta])*
-        fn $name:ident(&mut self, n: $ty:ty) -> $($fut:tt)*
-    ) => {
-        $(#[$outer])*
-        #[inline]
-        fn $name<'a, T: ByteOrder>(&'a mut self, n: $ty) -> $($fut)*<&'a mut Self> where Self: Unpin {
-            $($fut)*::new::<T>(self, n)
-        }
-    }
-}
 
 /// Extends [`AsyncWrite`] with methods for writing numbers.
 ///
