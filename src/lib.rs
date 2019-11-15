@@ -59,7 +59,6 @@ cases.
 #![deny(missing_docs)]
 #![warn(rust_2018_idioms)]
 
-pub use byteorder::{BigEndian, LittleEndian, NativeEndian, NetworkEndian};
 
 macro_rules! reader {
     ($name:ident, $ty:ty, $reader:ident) => {
@@ -268,11 +267,9 @@ pub mod futures;
 /// Prelude for convinience
 pub mod prelude {
     #[cfg(features = "futures-traits")]
-    pub use tokio::io_futures::{
-        AsyncReadBytesExt, AsyncWriteBytesExt, BigEndian, LittleEndian, NativeEndian, NetworkEndian,
-    };
+    pub use futures::{AsyncReadBytesExt as _, AsyncWriteBytesExt as _};
     #[cfg(features = "tokio-traits")]
-    pub use tokio::io_tokio::{
-        AsyncReadBytesExt, AsyncWriteBytesExt, BigEndian, LittleEndian, NativeEndian, NetworkEndian,
-    };
+    pub use tokio::{AsyncReadBytesExt as _, AsyncWriteBytesExt as _};
+
+    pub use byteorder::{BigEndian as _, LittleEndian as _, NativeEndian as _, NetworkEndian as _};
 }
