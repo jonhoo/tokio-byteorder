@@ -59,7 +59,6 @@ cases.
 #![deny(missing_docs)]
 #![warn(rust_2018_idioms)]
 
-
 macro_rules! reader {
     ($name:ident, $ty:ty, $reader:ident) => {
         reader!($name, $ty, $reader, size_of::<$ty>());
@@ -257,12 +256,12 @@ macro_rules! write_impl {
     }
 }
 
-/// Tokio io implementation
-#[cfg(feature = "tokio-traits")]
-pub mod tokio;
 /// Futures io implementation
 #[cfg(feature = "futures-traits")]
 pub mod futures;
+/// Tokio io implementation
+#[cfg(feature = "tokio-traits")]
+pub mod tokio;
 
 /// Prelude for convinience
 pub mod prelude {
