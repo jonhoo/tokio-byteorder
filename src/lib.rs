@@ -69,8 +69,8 @@ cases.
 [`AsyncWrite`]: https://docs.rs/tokio/0.2.0-alpha.4/tokio/io/trait.AsyncWrite.html
 */
 
-//#![deny(missing_docs)]
-//#![warn(rust_2018_idioms)]
+#![deny(missing_docs)]
+#![warn(rust_2018_idioms)]
 
 use byteorder::ByteOrder;
 use core::future::Future;
