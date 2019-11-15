@@ -258,25 +258,13 @@ macro_rules! write_impl {
     }
 }
 
-/// Tokio traits feature gate
+/// Tokio io implementation
 #[cfg(feature = "tokio-traits")]
-pub mod tokio {
-    /// Tokio io implementation
-    pub mod io_tokio;
-    pub use io_tokio::{
-        AsyncReadBytesExt, AsyncWriteBytesExt, BigEndian, LittleEndian, NativeEndian, NetworkEndian,
-    };
-}
-
-/// Futures io traits feature gate
+pub mod tokio;
+/// Futures io implementation
 #[cfg(feature = "futures-traits")]
-pub mod futures {
-    /// Futures io implementation
-    pub mod io_futures;
-    pub use io_futures::{
-        AsyncReadBytesExt, AsyncWriteBytesExt, BigEndian, LittleEndian, NativeEndian, NetworkEndian,
-    };
-}
+pub mod futures;
+
 /// Prelude for convinience
 pub mod prelude {
     #[cfg(features = "futures-traits")]
