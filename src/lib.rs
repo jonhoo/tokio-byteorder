@@ -69,8 +69,8 @@ cases.
 [`AsyncWrite`]: https://docs.rs/tokio/0.2.0-alpha.4/tokio/io/trait.AsyncWrite.html
 */
 
-#![deny(missing_docs)]
-#![warn(rust_2018_idioms)]
+//#![deny(missing_docs)]
+//#![warn(rust_2018_idioms)]
 
 use byteorder::ByteOrder;
 use core::future::Future;
@@ -78,7 +78,12 @@ use core::marker::{PhantomData, Unpin};
 use core::mem::size_of;
 use core::pin::Pin;
 use core::task::{Context, Poll};
-use tokio::io;
+
+#[cfg(feature = "futures-traits")]
+pub use futures_io as io;
+
+#[cfg(feature = "tokio-traits")]
+pub use tokio::io;
 
 pub use byteorder::{BigEndian, LittleEndian, NativeEndian, NetworkEndian};
 
