@@ -19,8 +19,8 @@ codecov = { repository = "jonhoo/tokio-byteorder", branch = "master", service = 
 
 
 [dependencies]
-tokio = { version = "0.2.0-alpha.4", default-features = false, features = ["io"] }
+tokio = { version = "0.2", features = ["io-util"] }
 byteorder = "1.3.2"
 
 [dev-dependencies]
-tokio = "0.2.0-alpha.4"
+tokio = { version = "0.2", features = ["full", "macros"] }
