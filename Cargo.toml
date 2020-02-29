@@ -19,8 +19,14 @@ codecov = { repository = "jonhoo/tokio-byteorder", branch = "master", service = 
 
 
 [dependencies]
-tokio = { version = "0.2", features = ["io-util"] }
+tokio = { version = "0.2", features = ["io-util"], optional = true }
 byteorder = "1.3.2"
+futures-io = { version = "0.3.4", optional = true }
+
+[features]
+default = ["tokio"]
+futures = ["futures-io"]
 
 [dev-dependencies]
 tokio = { version = "0.2", features = ["full", "macros"] }
+futures-executor = "0.3.4"

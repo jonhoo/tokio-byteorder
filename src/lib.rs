@@ -78,6 +78,9 @@ use core::marker::{PhantomData, Unpin};
 use core::mem::size_of;
 use core::pin::Pin;
 use core::task::{Context, Poll};
+#[cfg(feature = "futures")]
+use futures_io as io;
+#[cfg(feature = "tokio")]
 use tokio::io;
 
 pub use byteorder::{BigEndian, LittleEndian, NativeEndian, NetworkEndian};

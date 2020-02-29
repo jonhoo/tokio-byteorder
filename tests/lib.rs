@@ -1,3 +1,4 @@
+#[cfg(feature = "tokio")]
 macro_rules! rtt {
     ($name:ident, $write:path, $read:path, $v:expr) => {
         #[tokio::test]
@@ -15,6 +16,7 @@ macro_rules! rtt {
     };
 }
 
+#[cfg(feature = "tokio")]
 macro_rules! writes {
     ($write:path, $v:expr) => {
         #[tokio::test]
@@ -26,6 +28,43 @@ macro_rules! writes {
             let () = $write(&mut bytes, $v).await?;
             assert_ne!(bytes.len(), 0);
             Ok(())
+        }
+    };
+}
+#[cfg(feature = "futures")]
+macro_rules! rtt {
+    ($name:ident, $write:path, $read:path, $v:expr) => {
+        #[test]
+        fn $name() -> std::io::Result<()> {
+            #[allow(unused_imports)]
+            use tokio_byteorder::{AsyncReadBytesExt, AsyncWriteBytesExt, BigEndian};
+
+            futures_executor::block_on(async {
+                let mut bytes = Vec::new();
+                let () = $write(&mut bytes, $v).await?;
+                let mut b = &bytes[..];
+                let v = $read(&mut b).await?;
+                assert_eq!(v, $v);
+                Ok(())
+            })
+        }
+    };
+}
+
+#[cfg(feature = "futures")]
+macro_rules! writes {
+    ($write:path, $v:expr) => {
+        #[test]
+        fn writes() -> std::io::Result<()> {
+            #[allow(unused_imports)]
+            use tokio_byteorder::{AsyncWriteBytesExt, BigEndian};
+
+            futures_executor::block_on(async {
+                let mut bytes = Vec::new();
+                let () = $write(&mut bytes, $v).await?;
+                assert_ne!(bytes.len(), 0);
+                Ok(())
+            })
         }
     };
 }
