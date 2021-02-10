@@ -124,19 +124,17 @@ macro_rules! reader {
                 let mut src = unsafe { Pin::new_unchecked(&mut this.src) };
 
                 while this.read < $bytes as u8 {
-                    this.read += match src
-                        .as_mut()
-                        .poll_read(cx, &mut this.buf[this.read as usize..])
-                    {
+                    let mut buf = ::tokio::io::ReadBuf::new(&mut this.buf[this.read as usize..]);
+                    this.read += match src.as_mut().poll_read(cx, &mut buf) {
                         Poll::Pending => return Poll::Pending,
                         Poll::Ready(Err(e)) => return Poll::Ready(Err(e.into())),
-                        Poll::Ready(Ok(0)) => {
+                        Poll::Ready(Ok(())) if buf.filled().is_empty() => {
                             return Poll::Ready(Err(io::Error::new(
                                 io::ErrorKind::UnexpectedEof,
                                 "failed to fill whole buffer",
                             )));
                         }
-                        Poll::Ready(Ok(n)) => n as u8,
+                        Poll::Ready(Ok(())) => buf.filled().len() as u8,
                     };
                 }
                 Poll::Ready(Ok(T::$reader(&this.buf[..])))
@@ -157,14 +155,16 @@ macro_rules! reader8 {
             fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
                 let src = unsafe { self.map_unchecked_mut(|t| &mut t.0) };
                 let mut buf = [0; 1];
-                match src.poll_read(cx, &mut buf[..]) {
+                let mut buf = ::tokio::io::ReadBuf::new(&mut buf[..]);
+                match src.poll_read(cx, &mut buf) {
                     Poll::Pending => Poll::Pending,
                     Poll::Ready(Err(e)) => Poll::Ready(Err(e.into())),
-                    Poll::Ready(Ok(0)) => Poll::Ready(Err(io::Error::new(
-                        io::ErrorKind::UnexpectedEof,
-                        "failed to fill whole buffer",
-                    ))),
-                    Poll::Ready(Ok(1)) => Poll::Ready(Ok(buf[0] as $ty)),
+                    Poll::Ready(Ok(())) if buf.filled().is_empty() => Poll::Ready(Err(
+                        io::Error::new(io::ErrorKind::UnexpectedEof, "failed to fill whole buffer"),
+                    )),
+                    Poll::Ready(Ok(())) if buf.filled().len() == 1 => {
+                        Poll::Ready(Ok(buf.filled()[0] as $ty))
+                    }
                     Poll::Ready(Ok(_)) => unreachable!(),
                 }
             }
