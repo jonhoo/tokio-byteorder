@@ -1,6 +1,6 @@
 [package]
 name = "tokio-byteorder"
-version = "0.2.0"
+version = "0.3.0-alpha.1"
 edition = "2018"
 authors = ["Jon Gjengset <jon@thesquareplanet.com>"]
 
@@ -13,14 +13,9 @@ categories = ["encoding", "parsing", "asynchronous"]
 
 license = "Unlicense OR MIT"
 
-[badges]
-azure-devops = { project = "jonhoo/jonhoo", pipeline = "tokio-byteorder", build = "12" }
-codecov = { repository = "jonhoo/tokio-byteorder", branch = "master", service = "github" }
-
-
 [dependencies]
-tokio = { version = "0.2", features = ["io-util"] }
+tokio = { version = "1", features = ["io-util"] }
 byteorder = "1.3.2"
 
 [dev-dependencies]
-tokio = { version = "0.2", features = ["full", "macros"] }
+tokio = { version = "1", features = ["full", "macros"] }
